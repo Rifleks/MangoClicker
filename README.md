@@ -1,48 +1,51 @@
 # 🥭 MangoClicker
-![MangoClicker](https://github.com/Rifleks/ClickerApp/blob/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png)
 
-### **🌍 English:**  
-🚀 **Welcome to MangoClicker!** - Clicker for Android
+### **🇺🇸 English**
 
-🍹 **Tap the giant mango**, earn juicy points, and upgrade your tools in the **Shop**!  
-💰 **Simple but deep**: Start with just one button, then unlock powerful boosts!  
-📈 **Grow your mango empire** and become the ultimate Mango Master!  
+🚀 **MangoClicker** is a simple clicker for Android.
 
-📱 **Available now for Android 5.1+** – No ads, pure fun!  
+🍹 **Click on mango**, replenish your click account and buy upgrades in the **Store**!
+📈 **Try to build a mango empire** and become a more effective Mango Clicker!
 
-🔹 **Current Features:**  
-✔ **One-tap gameplay** – Tap the mango and collect points!  
-✔ **Upgrades Shop** – Boost your earnings with new tools!  
-✔ **Minimalistic & smooth** – Works even on older devices!  
+📱 **Available for Android 7.0 (SDK 24) and above** - No ads, just play.
 
-🔮 **Planned Updates:**  
-    - ✨ **New Upgrades** – More ways to grow your mango farm!  
-    - 📅 **Daily Challenges** – Complete tasks for special rewards!  
-    - 🔐 **Cloud Saves** – Protect your progress (Google Drive)  
-    - 🛡️ **Security Improvements** – Fair gameplay for all  
+- 🔹 **Current Features:**
+    - ✔ **Click:** Click on mango and get clicks!
+    - ✔**Improvement Store:** Increase your mango earnings with upgrades!
+    - ✔ **Light weight:** Works on different devices.
 
-📦 **The latest version is already available on [GitHub](https://github.com/Rifleks/ClickerApp/releases)!**
+- 🔮 **Planned updates:**
+    - ✨ **More improvements:** Expand the development possibilities of your mango farm!
+    - 📅 **Daily tasks:** Complete tasks and get rewards!
+    - 🔐 **Cloud Saves:** Save your progress using Google Auth and FireBase!
 
----  
+> [!NOTE]
+> 90% of the game's code was written by the neural network and this description, too.
 
-### **🌍 Русский:**  
-🚀 **Добро пожаловать в MangoClicker!** - Кликер для Android!  
+📦 **Download the latest version on [GitHub](https://github.com/Rifleks/ClickerApp/releases)!**
 
-🍹 **Нажимайте на манго**, зарабатывайте очки и улучшайте инструменты в **Магазине**!  
-💰 **Просто, но увлекательно** – Начните с одной кнопки, затем откройте мощные улучшения!  
-📈 **Создайте манго-империю** и станьте настоящим мастером манго!  
+---
 
-📱 **Доступно для Android 5.1+** – Без рекламы, только удовольствие!  
+### **🇷🇺 Русский**
 
-🔹 **Текущие возможности:**  
-✔ **Простой кликер** – Просто нажимайте на манго!  
-✔ **Магазин улучшений** – Увеличивайте доход!  
-✔ **Оптимизирован** – Работает даже на старых телефонах!  
+🚀 **MangoClicker** - Простой кликер для Android.
 
-🔮 **Планируемые обновления:**  
-    - ✨ **Новые улучшения** – Больше способов зарабатывать!  
-    - 📅 **Ежедневные задания** – Особые награды за выполнение!  
-    - 🔐 **Облачные сохранения** – Соранение прогресса (GoogleAuth)  
-    - 🛡️ **Защита от читов и взломов** – Честный игровой процесс  
+🍹 **Нажимайте на манго**, пополняйте счет кликов и покупайте улучшения в **Магазине**!
+📈 **Попробуйте построить манго-империю** и станьте более эффективным Mango Clicker!
 
-📦 **Последняя версия уже доступна на [GitHub](https://github.com/Rifleks/ClickerApp/releases)!**   
+📱 **Доступно для Android 7.0 (SDK 24) и выше** - Без рекламы, просто играйте.
+
+- 🔹 **Текущие возможности:**
+    - ✔ **Кликайте:** Нажимайте на манго и получайте клики!
+    - ✔ **Магазин улучшений:** Увеличьте свой заработок манго с помощью улучшений!
+    - ✔ **Легкий вес:** Работает на разных устройствах.
+
+- 🔮 **Планируемые обновления:**
+    - ✨ **Больше улучшений:** Расширьте возможности развития своей манговой фермы!
+    - 📅 **Ежедневные задания:** Выполняйте задания и получайте награды!
+    - 🔐 **Облачные сохранения:** Сохраняйте свой прогресс с помощью Google Auth и FireBase!
+
+> [!NOTE]
+> 90% кода игры написала нейросеть и это описание тоже.
+
+📦 **Скачайте последнюю версию на [GitHub](https://github.com/Rifleks/ClickerApp/releases)!**
