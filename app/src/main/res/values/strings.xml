@@ -10,4 +10,7 @@
     <string name="close_settings_desk">Close Settings</string>
     <string name="settings_text">⚙️</string>
     <string name="settings_desk">Settings</string>
+
+    <string name="google_sign_in">Sign in with Google</string>
+    <string name="default_web_client_id">448150562358-4iibo7r6kq0b4s6jhpn5mciiu70gjboi.apps.googleusercontent.com</string>
 </resources>

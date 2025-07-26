@@ -1,5 +1,6 @@
 package rifleks.clicker
 
+import android.annotation.SuppressLint
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -13,8 +14,6 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import java.text.DecimalFormat
 import java.util.Locale
-import android.annotation.SuppressLint
-import androidx.core.graphics.toColorInt
 
 class ShopFragment : Fragment() {
 
@@ -25,7 +24,6 @@ class ShopFragment : Fragment() {
     private lateinit var rebirthBonusText: TextView
     private lateinit var rebirthButton: Button
     private lateinit var mainActivity: MainActivity
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -84,7 +82,7 @@ class ShopFragment : Fragment() {
 
     private fun animateButton(view: View) {
         view.animate()
-            .scaleX(0.95f) // Slightly smaller scale
+            .scaleX(0.95f)
             .scaleY(0.95f)
             .setDuration(50)
             .withEndAction {
@@ -100,21 +98,18 @@ class ShopFragment : Fragment() {
         val isMangoClickMaxed = mainActivity.mangoClickLevel >= 100
         val canRebirth = mainActivity.clicks >= MainActivity.calculateRebirthCost(mainActivity.rebirthCount)
 
-        // Cooldown Button
         val cooldownCost = MainActivity.calculateCooldownCost(mainActivity.cooldownLevel, mainActivity.clickCooldown)
         val canBuyCooldown = mainActivity.clicks >= cooldownCost
         updateButtonAppearance(upgradeButton, canBuyCooldown, isCooldownMaxed, cooldownCost,
             ContextCompat.getColor(requireContext(), android.R.color.holo_green_light))
 
-        // Mango Click Button
         val mangoClickCost = MainActivity.calculateDamageCost(mainActivity.mangoClickLevel + 1)
         val canBuyMangoClick = mainActivity.clicks >= mangoClickCost
         updateButtonAppearance(mangoClickUpgradeButton, canBuyMangoClick, isMangoClickMaxed, mangoClickCost,
             ContextCompat.getColor(requireContext(), android.R.color.holo_green_light))
 
-        // Rebirth Button
         updateButtonAppearance(rebirthButton, canRebirth, false, MainActivity.calculateRebirthCost(mainActivity.rebirthCount),
-            ContextCompat.getColor(requireContext(), android.R.color.holo_green_light)) // Rebirth can't be "maxed"
+            ContextCompat.getColor(requireContext(), android.R.color.holo_green_light))
     }
 
     @SuppressLint("SetTextI18n")
@@ -144,7 +139,7 @@ class ShopFragment : Fragment() {
             }
         }
         if (button == rebirthButton) {
-            button.text = "${Translation.translate("rebirth")} (${MainActivity.formatNumber(cost)} 🥭)" // Use translation and format
+            button.text = "${Translation.translate("rebirth")} (${MainActivity.formatNumber(cost)} 🥭)"
         } else {
             button.text = buttonText
         }
@@ -163,7 +158,7 @@ class ShopFragment : Fragment() {
         val builder = AlertDialog.Builder(requireContext())
             .setTitle(Translation.translate("rebirth_confirmation_title"))
             .setMessage(message)
-            .setPositiveButton(Translation.translate("rebirth_positive_button")) { dialog, which ->
+            .setPositiveButton(Translation.translate("rebirth_positive_button")) { _, _ ->
                 performRebirth()
             }
             .setNegativeButton(Translation.translate("rebirth_negative_button"), null)
