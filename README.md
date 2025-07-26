@@ -21,7 +21,7 @@
 > [!NOTE]
 > 90% of the game's code was written by the neural network and this description, too.
 
-📦 **Download the latest version on [GitHub](https://github.com/Rifleks/ClickerApp/releases)!**
+📦 **Download the latest version on [GitHub](https://github.com/Rifleks/MangoClicker/releases)!**
 
 ---
 
@@ -46,4 +46,4 @@
 > [!NOTE]
 > 90% кода игры написала нейросеть и это описание тоже.
 
-📦 **Скачайте последнюю версию на [GitHub](https://github.com/Rifleks/ClickerApp/releases)!**
+📦 **Скачайте последнюю версию на [GitHub](https://github.com/Rifleks/MangoClicker/releases)!**
