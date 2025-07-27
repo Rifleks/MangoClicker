@@ -19,7 +19,27 @@
     "rebirth_successful": "Вы успешно переродились!",
     "not_enough_mango_rebirth": "Недостаточно 🥭 для перерождения!",
     "upgrade_cooldown": "Улучшить ({cost} 🥭)",
-    "upgrade_damage": "Прокачать ({cost} 🥭)"
+    "upgrade_damage": "Прокачать ({cost} 🥭)",
+
+    "update_available": "Доступно обновление!",
+    "update_current_version": "Ваша версия: {version}",
+    "update_new_version": "Новая версия: {version}",
+    "update_install": "Установить",
+    "cancel": "Отмена",
+    "update_later": "Позже",
+    "update_downloading_title": "Скачивание обновления",
+    "update_downloading": "Скачивание...",
+    "update_download_cancelled": "Загрузка отменена",
+    "update_cancel_failed": "Не удалось отменить загрузку",
+    "update_no_apk_found": "Не удалось найти APK.",
+    "update_download_failed": "Ошибка при загрузке",
+    "update_install_started": "Установка обновления...",
+    "update_install_failed": "Ошибка при установке APK",
+    "update_install_general_failed": "Ошибка установки обновления.",
+    "update_check_failed": "Не удалось проверить обновления.",
+    "update_size": "Размер обновления: {size} MB",
+    "update_downloaded": "Скачано: {downloaded} / {total} MB",
+    "update_installing": "Установка..."
   },
   "en": {
     "main_tab_text": "Main",
@@ -40,7 +60,25 @@
     "rebirth_negative_button": "Cancel",
     "rebirth_successful": "You have successfully Rebirthed!",
     "not_enough_mango_rebirth": "Not enough 🥭 for rebirth!",
-    "upgrade_cooldown": "Upgrade ({cost} 🥭)",
-    "upgrade_damage": "Upgrade ({cost} 🥭)"
+
+    "update_available": "Update Available!",
+    "update_current_version": "Your Version: {version}",
+    "update_new_version": "New Version: {version}",
+    "update_install": "Install",
+    "cancel": "Cancel",
+    "update_later": "Later",
+    "update_downloading_title": "Downloading Update",
+    "update_downloading": "Downloading...",
+    "update_download_cancelled": "Download cancelled",
+    "update_cancel_failed": "Failed to cancel download",
+    "update_no_apk_found": "Failed to find APK.",
+    "update_download_failed": "Download failed",
+    "update_install_started": "Installing Update...",
+    "update_install_failed": "APK Installation Failed",
+    "update_install_general_failed": "Update installation failed.",
+    "update_check_failed": "Failed to check for updates.",
+    "update_size": "Update size: {size} MB",
+    "update_downloaded": "Downloaded: {downloaded} / {total} MB",
+    "update_installing": "Installing..."
   }
 }

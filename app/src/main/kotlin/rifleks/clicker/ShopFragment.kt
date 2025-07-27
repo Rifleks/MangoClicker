@@ -1,6 +1,7 @@
 package rifleks.clicker
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -12,8 +13,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import java.text.DecimalFormat
 import java.util.Locale
+import kotlin.math.pow
 
 class ShopFragment : Fragment() {
 
@@ -51,9 +52,11 @@ class ShopFragment : Fragment() {
             if (mainActivity.buyClickUpgrade()) {
                 updateViews()
             } else {
-                val price = MainActivity.calculateCooldownCost(mainActivity.cooldownLevel, mainActivity.clickCooldown)
+                val price = MainActivity.calculateCooldownCost(mainActivity.cooldownLevel)
                 if (mainActivity.clicks < price) {
-                    showToast(Translation.translate("not_enough_mangoes").replace("{cost}", MainActivity.formatNumber(price)))
+                    showToast(
+                        Translation.translate("not_enough_mangoes").replace("{cost}", MainActivity.formatNumber(price))
+                    )
                 } else {
                     showToast(Translation.translate("max_level"))
                 }
@@ -67,7 +70,9 @@ class ShopFragment : Fragment() {
             } else {
                 val price = MainActivity.calculateDamageCost(mainActivity.mangoClickLevel + 1)
                 if (mainActivity.clicks < price) {
-                    showToast(Translation.translate("not_enough_mangoes").replace("{cost}", MainActivity.formatNumber(price)))
+                    showToast(
+                        Translation.translate("not_enough_mangoes").replace("{cost}", MainActivity.formatNumber(price))
+                    )
                 } else {
                     showToast(Translation.translate("max_level"))
                 }
@@ -93,22 +98,26 @@ class ShopFragment : Fragment() {
             }
     }
 
-    private fun updateButtonState() {
+    fun updateButtonState() {
         val isCooldownMaxed = mainActivity.cooldownLevel >= 16
         val isMangoClickMaxed = mainActivity.mangoClickLevel >= 100
-        val canRebirth = mainActivity.clicks >= MainActivity.calculateRebirthCost(mainActivity.rebirthCount)
 
-        val cooldownCost = MainActivity.calculateCooldownCost(mainActivity.cooldownLevel, mainActivity.clickCooldown)
+        val rebirthCost = calculateRebirthCost(mainActivity.rebirthCount)
+        val canRebirth = mainActivity.clicks >= rebirthCost
+
+        val cooldownCost = MainActivity.calculateCooldownCost(mainActivity.cooldownLevel)
         val canBuyCooldown = mainActivity.clicks >= cooldownCost
-        updateButtonAppearance(upgradeButton, canBuyCooldown, isCooldownMaxed, cooldownCost,
-            ContextCompat.getColor(requireContext(), android.R.color.holo_green_light))
 
         val mangoClickCost = MainActivity.calculateDamageCost(mainActivity.mangoClickLevel + 1)
         val canBuyMangoClick = mainActivity.clicks >= mangoClickCost
+
+        updateButtonAppearance(upgradeButton, canBuyCooldown, isCooldownMaxed, cooldownCost,
+            ContextCompat.getColor(requireContext(), android.R.color.holo_green_light))
+
         updateButtonAppearance(mangoClickUpgradeButton, canBuyMangoClick, isMangoClickMaxed, mangoClickCost,
             ContextCompat.getColor(requireContext(), android.R.color.holo_green_light))
 
-        updateButtonAppearance(rebirthButton, canRebirth, false, MainActivity.calculateRebirthCost(mainActivity.rebirthCount),
+        updateButtonAppearance(rebirthButton, canRebirth, false, rebirthCost,
             ContextCompat.getColor(requireContext(), android.R.color.holo_green_light))
     }
 
@@ -118,7 +127,7 @@ class ShopFragment : Fragment() {
         val alphaValue = if (!canBuy && !isMaxLevel) 0.3f else 1.0f
         button.alpha = alphaValue
 
-        val context = context ?: return
+        context ?: return
 
         val buttonColor = when {
             isMaxLevel -> Color.DKGRAY
@@ -128,31 +137,42 @@ class ShopFragment : Fragment() {
 
         button.setBackgroundColor(buttonColor)
 
-        val buttonText = if (isMaxLevel) {
-            Translation.translate("max_level")
-        } else {
-            val formattedCost = MainActivity.formatNumber(cost)
-            when (button) {
-                upgradeButton -> Translation.translate("upgrade_cooldown").replace("{cost}", formattedCost)
-                mangoClickUpgradeButton -> Translation.translate("upgrade_damage").replace("{cost}", formattedCost)
-                else -> Translation.translate("rebirth").replace("{cost}", formattedCost)
+        val buttonText = when (button) {
+            upgradeButton -> {
+                val cooldown = mainActivity.clickCooldown
+                if (cooldown <= 0.2) {
+                    button.isEnabled = false
+                    Translation.translate("max_level")
+                } else {
+                    val formattedCost = MainActivity.formatNumber(cost)
+                    Translation.translate("upgrade_cooldown").replace("{cost}", formattedCost)
+                }
             }
+            mangoClickUpgradeButton -> {
+                val formattedCost = MainActivity.formatNumber(cost)
+                Translation.translate("upgrade_damage").replace("{cost}", formattedCost)
+            }
+            rebirthButton -> {
+                val prefs = requireContext().getSharedPreferences("ClickerPrefs", Context.MODE_PRIVATE)
+                val rebirths = prefs.getInt("rebirths", 0)
+                val bonus = Math.round(rebirths * 0.2)
+                val formattedCost = MainActivity.formatNumber(cost)
+                "${Translation.translate("rebirth")} (+$bonus) ($formattedCost 🥭)"
+            }
+            else -> ""
         }
-        if (button == rebirthButton) {
-            button.text = "${Translation.translate("rebirth")} (${MainActivity.formatNumber(cost)} 🥭)"
-        } else {
+
+        if (button != rebirthButton) {
             button.text = buttonText
         }
     }
 
     private fun showRebirthConfirmationDialog() {
-        val rebirthCost = MainActivity.calculateRebirthCost(mainActivity.rebirthCount)
-        val bonus = MainActivity.calculateRebirthBonus(mainActivity.rebirthCount)
-
-        val df = DecimalFormat("#.##", java.text.DecimalFormatSymbols(Locale.US))
+        val rebirthCost = calculateRebirthCost(mainActivity.rebirthCount)
+        val bonus = Math.round(calculateRebirthBonus(mainActivity.rebirthCount) * 100).toString()
 
         val message = Translation.translate("rebirth_confirmation_message")
-            .replace("{bonus}", df.format(bonus))
+            .replace("{bonus}", bonus)
             .replace("{cost}", MainActivity.formatNumber(rebirthCost))
 
         val builder = AlertDialog.Builder(requireContext())
@@ -166,15 +186,17 @@ class ShopFragment : Fragment() {
     }
 
     private fun performRebirth() {
-        val rebirthCost = MainActivity.calculateRebirthCost(mainActivity.rebirthCount)
+        val rebirthCost = calculateRebirthCost(mainActivity.rebirthCount)
 
         if (mainActivity.clicks >= rebirthCost) {
             mainActivity.clicks -= rebirthCost
             mainActivity.rebirthCount++
-            mainActivity.rebirthBonus = MainActivity.calculateRebirthBonus(mainActivity.rebirthCount)
+            mainActivity.rebirthBonus = calculateRebirthBonus(mainActivity.rebirthCount)
             resetGame()
             updateViews()
             Toast.makeText(requireContext(), Translation.translate("rebirth_successful"), Toast.LENGTH_SHORT).show()
+
+            mainActivity.saveGame()
         } else {
             showToast(Translation.translate("not_enough_mango_rebirth"))
         }
@@ -185,6 +207,7 @@ class ShopFragment : Fragment() {
         mainActivity.cooldownLevel = 0
         mainActivity.clickCooldown = 0.5
         mainActivity.mangoClickLevel = 1
+
         mainActivity.saveGame()
     }
 
@@ -203,13 +226,13 @@ class ShopFragment : Fragment() {
 
     @SuppressLint("SetTextI18n")
     private fun updateRebirthBonusText() {
-        val rebirthBonus = String.format(Locale.US, "%.0f", mainActivity.rebirthBonus)
-        rebirthBonusText.text = "${Translation.translate("rebirth_bonus")}: $rebirthBonus%"
+        val rebirthBonus = Math.round(mainActivity.rebirthBonus * 100).toString()
+        rebirthBonusText.text = "${Translation.translate("rebirth_bonus")}: +${rebirthBonus}%"
     }
 
     @SuppressLint("SetTextI18n")
     private fun updateRebirthButtonText() {
-        val rebirthCost = MainActivity.calculateRebirthCost(mainActivity.rebirthCount)
+        val rebirthCost = calculateRebirthCost(mainActivity.rebirthCount)
         rebirthButton.text = "${Translation.translate("rebirth")} (${MainActivity.formatNumber(rebirthCost)} 🥭)"
         rebirthButton.isEnabled = mainActivity.clicks >= rebirthCost
     }
@@ -228,5 +251,14 @@ class ShopFragment : Fragment() {
 
     companion object {
         fun newInstance() = ShopFragment()
+
+        fun calculateRebirthCost(rebirthCount: Int): Long {
+            val baseCost = 500_000.0
+            return Math.round(baseCost * 1.3.pow(rebirthCount.toDouble()))
+        }
+
+        fun calculateRebirthBonus(rebirthCount: Int): Double {
+            return rebirthCount * 0.2
+        }
     }
 }

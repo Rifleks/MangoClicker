@@ -1,206 +1,299 @@
 package rifleks.clicker
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.IntentSender
+import android.content.SharedPreferences
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import androidx.core.content.edit
+import com.google.android.gms.auth.api.identity.BeginSignInRequest
+import com.google.android.gms.auth.api.identity.GetSignInIntentRequest
+import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.auth.api.identity.SignInClient
 import com.google.android.gms.common.api.ApiException
-import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.auth.auth
-import com.google.firebase.database.FirebaseDatabase
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
-import java.time.LocalDate
+import java.lang.Exception
 
 object Auth {
-    @SuppressLint("StaticFieldLeak")
-    private lateinit var googleSignInClient: GoogleSignInClient
-    private lateinit var auth: FirebaseAuth
-    private val database = FirebaseDatabase.getInstance().reference
+    // Authentication clients
+    private lateinit var oneTapClient: SignInClient
+    private lateinit var signInRequest: BeginSignInRequest
 
+    // Firebase services
+    private val auth: FirebaseAuth = Firebase.auth
+    private val database: DatabaseReference = Firebase.database.reference
+
+    // Coroutine scope for auth operations
+    private val authScope = CoroutineScope(Dispatchers.IO + Job())
+
+    // Current session state
     private var currentUserID: String? = null
+    private lateinit var prefs: SharedPreferences
 
-    fun getCurrentUserID(): String?{
-        return currentUserID
-    }
-
-    internal fun setCurrentUserID(value: String?){
-        currentUserID = value
-    }
-
+    /**
+     * Initializes authentication services
+     * @param context Application context
+     */
     fun initialize(context: Context) {
-        // Configure Google Sign In
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(context.getString(R.string.default_web_client_id))
-            .requestEmail()
+        oneTapClient = Identity.getSignInClient(context)
+        signInRequest = createSignInRequest(context)
+        prefs = context.getSharedPreferences("AuthPrefs", Context.MODE_PRIVATE)
+        restoreSession()
+    }
+
+    fun setCurrentUserID(id: String?) {
+        currentUserID = id
+    }
+
+    private fun createSignInRequest(context: Context): BeginSignInRequest {
+        return BeginSignInRequest.builder()
+            .setGoogleIdTokenRequestOptions(
+                BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
+                    .setSupported(true)
+                    .setServerClientId(context.getString(R.string.default_web_client_id))
+                    .setFilterByAuthorizedAccounts(false)
+                    .build())
+            .setAutoSelectEnabled(true)
+            .build()
+    }
+
+    private fun restoreSession() {
+        currentUserID = auth.currentUser?.uid
+    }
+
+    /**
+     * Returns current authenticated user ID
+     */
+    fun getCurrentUserID(): String? = auth.currentUser?.uid
+
+    /**
+     * Checks if user is authenticated
+     */
+    fun isAuthenticated(): Boolean = auth.currentUser != null
+
+    /**
+     * Starts the Google sign-in flow
+     * @param activity Host activity
+     * @param requestCode Request code for activity result
+     */
+    fun startSignIn(activity: Activity, requestCode: Int) {
+        oneTapClient.beginSignIn(signInRequest)
+            .addOnSuccessListener { result ->
+                launchSignInIntent(activity, result.pendingIntent.intentSender, requestCode)
+            }
+            .addOnFailureListener { e ->
+                Log.e("Auth", "Sign-in failed", e)
+                fallbackToBrowserSignIn(activity, requestCode)
+            }
+    }
+
+    private fun fallbackToBrowserSignIn(activity: Activity, requestCode: Int) {
+        val signInRequest = GetSignInIntentRequest.builder()
+            .setServerClientId(activity.getString(R.string.default_web_client_id))
             .build()
 
-        googleSignInClient = GoogleSignIn.getClient(context, gso)
-        auth = Firebase.auth
-    }
-
-    fun signIn(activity: Activity) {
-        val signInIntent = googleSignInClient.signInIntent
-        activity.startActivityForResult(signInIntent, MainActivity.RC_SIGN_IN)
-    }
-
-    fun handleSignInResult(
-        context: Context,
-        intent: Intent?,
-        onSuccess: () -> Unit,
-        onFailure: (String) -> Unit
-    ) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val task = GoogleSignIn.getSignedInAccountFromIntent(intent)
-                val account = task.getResult(ApiException::class.java)
-
-                if (account != null)
-                    firebaseAuthWithGoogle(account.idToken!!, onSuccess, onFailure, context as Activity) // Передаем activity
-                else
-                    onFailure("Google Sign-in failed: Account is null")
-
-            } catch (e: Exception) {
-                onFailure("Google Sign-in failed: ${e.message}")
-            }
-        }
-    }
-
-    private suspend fun firebaseAuthWithGoogle(
-        idToken: String,
-        onSuccess: () -> Unit,
-        onFailure: (String) -> Unit,
-        activity: Activity
-    ) {
-        try {
-            val credential = GoogleAuthProvider.getCredential(idToken, null)
-            val authResult = auth.signInWithCredential(credential).await()
-            setCurrentUserID(authResult.user?.uid)
-
-            withContext(Dispatchers.Main) {
-                onSuccess()
-                activity.finish() // Закрываем окно авторизации
-            }
-        } catch (e: Exception) {
-            withContext(Dispatchers.Main) {
-                onFailure("Firebase authentication failed: ${e.message}")
-            }
-        }
-    }
-
-    suspend fun loadGameData(
-        userID: String,
-        onSuccess: (GameData) -> Unit,
-        onFailure: (String) -> Unit
-    ) {
-        try {
-            val dataSnapshot = database.child("users").child(userID).get().await()
-            if (dataSnapshot.exists()) {
-                val data = dataSnapshot.value as? Map<*, *> // Получаем данные как Map
-                if (data != null) {
-                    val gameData = GameData(
-                        clicks = (data["clicks"] as? Number)?.toLong() ?: 0L,
-                        clickCooldown = (data["clickCooldown"] as? Number)?.toDouble() ?: 0.5,
-                        mangoClickLevel = (data["mangoClickLevel"] as? Number)?.toInt() ?: 1,
-                        lastClickTime = (data["lastClickTime"] as? Number)?.toLong() ?: 0L,
-                        cooldownLevel = (data["cooldownLevel"] as? Number)?.toInt() ?: 0,
-                        rebirthCount = (data["rebirthCount"] as? Number)?.toInt() ?: 0,
-                        rebirthBonus = (data["rebirthBonus"] as? Number)?.toDouble() ?: 0.0
+        Identity.getSignInClient(activity)
+            .getSignInIntent(signInRequest)
+            .addOnSuccessListener { pendingIntent ->
+                try {
+                    activity.startIntentSenderForResult(
+                        pendingIntent.intentSender,
+                        requestCode,
+                        null, 0, 0, 0, null
                     )
-                    withContext(Dispatchers.Main) {
-                        onSuccess(gameData)
-                    }
-                } else {
-                    withContext(Dispatchers.Main) {
-                        onFailure("Failed to deserialize game data (null map).")
-                    }
-                }
-            } else {
-                withContext(Dispatchers.Main) {
-                    onSuccess(GameData()) // Return default values
+                } catch (e: IntentSender.SendIntentException) {
+                    Log.e("Auth", "Browser sign-in failed to launch", e)
                 }
             }
+            .addOnFailureListener { e ->
+                Log.e("Auth", "Browser sign-in failed", e)
+            }
+    }
+
+
+    private fun launchSignInIntent(
+        activity: Activity,
+        intentSender: IntentSender,
+        requestCode: Int
+    ) {
+        try {
+            activity.startIntentSenderForResult(
+                intentSender,
+                requestCode,
+                null, 0, 0, 0, null
+            )
         } catch (e: Exception) {
-            withContext(Dispatchers.Main) {
-                onFailure("Load failed: ${e.message}")
+            Log.e("Auth", "Failed to launch sign-in", e)
+        }
+    }
+
+    /**
+     * Handles sign-in result
+     * @param data Intent with sign-in result
+     * @param onSuccess Callback with user ID
+     * @param onFailure Callback with error message
+     */
+    fun handleSignInResult(
+        data: Intent?,
+        onSuccess: (userId: String) -> Unit,
+        onFailure: (error: String) -> Unit
+    ) {
+        authScope.launch {
+            try {
+                // Получаем credential
+                val credential = oneTapClient.getSignInCredentialFromIntent(data)
+
+                val idToken = credential.googleIdToken
+                    ?: return@launch // ✅ просто выходим без onFailure, если пользователь закрыл окно
+
+                val firebaseUser = authenticateWithFirebase(idToken)
+                persistUserSession(firebaseUser)
+
+                withContext(Dispatchers.Main) {
+                    onSuccess(firebaseUser.uid)
+                }
+            } catch (e: Exception) {
+                Log.e("Auth", "Sign-in error", e)
+                withContext(Dispatchers.Main) {
+                    // ✅ Показываем ошибку только если пользователь **не закрыл окно**, а вход реально провалился
+                    if (e.message?.contains("13") == false) {
+                        onFailure(parseAuthError(e))
+                    }
+                }
             }
         }
     }
-    suspend fun saveGameData(userID: String, gameData: GameData, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+
+
+    private suspend fun authenticateWithFirebase(idToken: String): FirebaseUser {
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+        return auth.signInWithCredential(credential).await().user
+            ?: throw IllegalStateException("Firebase authentication failed")
+    }
+
+    private fun persistUserSession(user: FirebaseUser) {
+        currentUserID = user.uid
+        prefs.edit {
+            putBoolean("isLoggedIn", true)
+            putString("userId", user.uid)
+        }
+    }
+
+    /**
+     * Signs out the current user
+     */
+    fun signOut(context: Context, onComplete: () -> Unit) {
+        authScope.launch {
+            try {
+                oneTapClient.signOut().await()
+                auth.signOut()
+                clearSession()
+                withContext(Dispatchers.Main) {
+                    onComplete()
+                }
+            } catch (e: Exception) {
+                Log.e("Auth", "Sign-out failed", e)
+                forceSignOut(context, onComplete)
+            }
+        }
+    }
+
+    private fun forceSignOut(context: Context, onComplete: () -> Unit) {
+        auth.signOut()
+        clearSession()
+        onComplete()
+    }
+
+    private fun clearSession() {
+        currentUserID = null
+        prefs.edit { clear() }
+    }
+
+    // Cloud Data Operations
+
+    /**
+     * Loads game data from cloud
+     * @param userId User ID to load data for
+     * @return Result wrapper with GameData or error
+     */
+    suspend fun loadGameData(userID: String): Result<GameData> = withContext(Dispatchers.IO) {
+        try {
+            val snapshot = database.child("users").child(userID).get().await()
+            val gameData = snapshot.getValue(GameData::class.java) ?: GameData()
+            Result.success(gameData)
+        } catch (e: Exception) {
+            Log.e("Auth", "Load failed", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Saves game data to cloud
+     * @param userId User ID to save data for
+     * @param gameData Game data to save
+     * @return Result wrapper with success or error
+     */
+
+    suspend fun saveGameData(userID: String, gameData: GameData): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             database.child("users").child(userID).setValue(gameData).await()
-            withContext(Dispatchers.Main) {
-                onSuccess()
-            }
+            Result.success(Unit)
         } catch (e: Exception) {
-            withContext(Dispatchers.Main) {
-                onFailure("Save failed: ${e.message}")
-            }
-        }
-    }
-    suspend fun getLastSaveDate(userID: String): LocalDate? {
-        return try {
-            val dataSnapshot = database.child("users").child(userID).child("lastSaveDate").get().await()
-            if (dataSnapshot.exists()) {
-                LocalDate.parse(dataSnapshot.getValue(String::class.java))
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            Log.e("Auth", "Error getting last save date: ${e.message}")
-            null
+            Log.e("Auth", "Save failed", e)
+            Result.failure(e)
         }
     }
 
-    suspend fun setLastSaveDate(userID: String) {
-        try {
-            val currentDate = LocalDate.now().toString()
-            database.child("users").child(userID).child("lastSaveDate").setValue(currentDate).await()
-        } catch (e: Exception) {
-            Log.e("Auth", "Error setting last save date: ${e.message}")
+    /**
+     * Shows sign-in dialog when authentication is required
+     */
+    fun showSignInDialog(
+        context: Context,
+        onSignIn: () -> Unit,
+        onSkip: () -> Unit
+    ) {
+        val dialog = AlertDialog.Builder(context)
+            .setTitle("Авторизация")
+            .setMessage("Войдите в аккаунт, чтобы синхронизировать прогресс")
+            .setCancelable(false)
+            .setPositiveButton("Войти") { dialogInterface, _ ->
+                dialogInterface.dismiss()
+                onSignIn()
+            }
+            .setNegativeButton("Пропустить") { dialogInterface, _ ->
+                dialogInterface.dismiss()
+                onSkip()
+            }
+            .create()
+
+        dialog.show()
+    }
+
+
+    // Helper functions
+    private fun parseAuthError(e: Exception): String {
+        return when (e) {
+            is ApiException -> when (e.statusCode) {
+                10 -> "Developer error"
+                12501 -> "Sign-in cancelled"
+                else -> "Authentication failed"
+            }
+            else -> e.message ?: "Unknown error"
         }
     }
 
-    fun showSignInDialog(context: Context, onPositiveClick: () -> Unit, onNegativeClick: () -> Unit) {
-        AlertDialog.Builder(context)
-            .setTitle("Google Sign-In Required")
-            .setMessage("Please sign in with your Google account to save and load your progress.")
-            .setPositiveButton("Sign In") { dialog, which ->
-                onPositiveClick()
-                dialog.dismiss()
-            }
-            .setNegativeButton("Skip") { dialog, which ->
-                onNegativeClick()
-                dialog.dismiss()
-            }
-            .setCancelable(false) // Prevent dismissing by tapping outside the dialog
-            .show()
-    }
-
-    fun showConcurrentSessionDialog(context: Context, onDismiss: () -> Unit) {
-        AlertDialog.Builder(context)
-            .setTitle("Concurrent Session Detected")
-            .setMessage("Your account is already in use on another device. This game will now exit.")
-            .setPositiveButton("OK") { dialog, which ->
-                onDismiss()
-                dialog.dismiss()
-            }
-            .setCancelable(false) // Prevent dismissing by tapping outside the dialog
-            .show()
-    }
-
-    fun signOut() {
-        auth.signOut()
-        setCurrentUserID(null)
+    sealed class ResultWrapper<out T> {
+        data class Success<out T>(val data: T) : ResultWrapper<T>()
+        data class Error(val exception: Exception) : ResultWrapper<Nothing>()
     }
 }

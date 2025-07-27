@@ -11,6 +11,6 @@
     <color name="shop_bg">#FFA500</color>
     <color name="button_enabled">#808080</color>
     <color name="button_disabled">#FF000000</color>
-    <color name="default_start_color">#3901A4</color>
-    <color name="default_end_color">#6B00D9</color>
+
+    <color name="ic_launcher_background">#000000</color>
 </resources>

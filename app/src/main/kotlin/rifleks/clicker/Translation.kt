@@ -7,10 +7,6 @@ import java.util.*
 object Translation {
     private var translations: JSONObject? = null
     var currentLanguage: String = "en" // Язык по умолчанию
-        set(value) {
-            field = value
-            // Log.d("Translation", "Language set to: $value") // Remove
-        }
 
     fun loadTranslations(context: Context) {
         try {
@@ -22,21 +18,16 @@ object Translation {
             val jsonString = String(buffer, Charsets.UTF_8)
             translations = JSONObject(jsonString)
 
-            // Получаем список доступных языков из translations.json
             val availableLanguages = translations?.keys()?.asSequence()?.toList() ?: listOf("en")
 
-            // Определяем язык системы
             val systemLanguage = Locale.getDefault().language
 
-            // Проверяем, есть ли точное соответствие языка системы в переводах
             if (availableLanguages.contains(systemLanguage)) {
                 currentLanguage = systemLanguage
             } else {
-                // Если точного соответствия нет, проверяем, есть ли язык по умолчанию (en)
                 if (availableLanguages.contains("en")) {
                     currentLanguage = "en" // Используем английский как запасной вариант
                 } else {
-                    // Если английского нет, берем первый доступный язык.
                     currentLanguage = availableLanguages.first()
                 }
             }
@@ -47,9 +38,9 @@ object Translation {
 
     fun translate(key: String): String {
         return try {
-            translations?.getJSONObject(currentLanguage)?.getString(key) ?: key
+            translations?.getJSONObject(currentLanguage)?.optString(key) ?: ""
         } catch (e: Exception) {
-            key
+            ""
         }
     }
 }
