@@ -17,12 +17,11 @@
 - 🔮 **Planned updates:**
     - ✨ **More improvements:** Expand the development possibilities of your mango farm!
     - 📅 **Daily tasks:** Complete tasks and get rewards!
-    - 🔐 **Cloud Saves:** Save your progress using Google Auth and FireBase!
 
 > [!NOTE]
 > 90% of the game's code was written by the neural network and this description, too.
 
-📦 **Download the latest version on [GitHub](https://github.com/Rifleks/ClickerApp/releases)!**
+📦 **Download the latest version on [GitHub](https://github.com/Rifleks/MangoClicker/releases)!**
 
 ---
 
@@ -43,9 +42,8 @@
 - 🔮 **Планируемые обновления:**
     - ✨ **Больше улучшений:** Расширьте возможности развития своей манговой фермы!
     - 📅 **Ежедневные задания:** Выполняйте задания и получайте награды!
-    - 🔐 **Облачные сохранения:** Сохраняйте свой прогресс с помощью Google Auth и FireBase!
 
 > [!NOTE]
 > 90% кода игры написала нейросеть и это описание тоже.
 
-📦 **Скачайте последнюю версию на [GitHub](https://github.com/Rifleks/ClickerApp/releases)!**
+📦 **Скачайте последнюю версию на [GitHub](https://github.com/Rifleks/MangoClicker/releases)!**
